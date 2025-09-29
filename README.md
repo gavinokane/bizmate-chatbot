@@ -1,46 +1,24 @@
-# Getting Started with Create React App
+# Box AI Chatbot - Public Interface
 
-This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
+A production-ready chatbot interface that integrates with Box AI via DoozerAI middleware for intelligent document-based support conversations.
 
-## Available Scripts
+## Ì∫Ä Features
 
-In the project directory, you can run:
+- **Anonymous User Support**: No authentication required for users
+- **Box AI Integration**: Leverages existing Box AI capabilities through DoozerAI
+- **Real-time Conversations**: Contextual multi-turn conversations with typing indicators
+- **Security First**: Rate limiting, input validation, and response filtering
+- **Mobile Responsive**: Works seamlessly on desktop and mobile devices
+- **Session Management**: Browser-based sessions with automatic cleanup
+- **Error Handling**: Graceful degradation and comprehensive error boundaries
 
-### `npm start`
+## Ìª†Ô∏è Technology Stack
 
-Runs the app in the development mode.\
-Open [http://localhost:3000](http://localhost:3000) to view it in the browser.
+- **Frontend**: React 18 + TypeScript
+- **State Management**: Zustand + React Query
+- **Styling**: Emotion CSS-in-JS
+- **API Integration**: Axios with interceptors
+- **Testing**: Jest + React Testing Library
+- **Build Tool**: Create React App (CRA)
 
-The page will reload if you make edits.\
-You will also see any lint errors in the console.
-
-### `npm test`
-
-Launches the test runner in the interactive watch mode.\
-See the section about [running tests](https://facebook.github.io/create-react-app/docs/running-tests) for more information.
-
-### `npm run build`
-
-Builds the app for production to the `build` folder.\
-It correctly bundles React in production mode and optimizes the build for the best performance.
-
-The build is minified and the filenames include the hashes.\
-Your app is ready to be deployed!
-
-See the section about [deployment](https://facebook.github.io/create-react-app/docs/deployment) for more information.
-
-### `npm run eject`
-
-**Note: this is a one-way operation. Once you `eject`, you can‚Äôt go back!**
-
-If you aren‚Äôt satisfied with the build tool and configuration choices, you can `eject` at any time. This command will remove the single build dependency from your project.
-
-Instead, it will copy all the configuration files and the transitive dependencies (webpack, Babel, ESLint, etc) right into your project so you have full control over them. All of the commands except `eject` will still work, but they will point to the copied scripts so you can tweak them. At this point you‚Äôre on your own.
-
-You don‚Äôt have to ever use `eject`. The curated feature set is suitable for small and middle deployments, and you shouldn‚Äôt feel obligated to use this feature. However we understand that this tool wouldn‚Äôt be useful if you couldn‚Äôt customize it when you are ready for it.
-
-## Learn More
-
-You can learn more in the [Create React App documentation](https://facebook.github.io/create-react-app/docs/getting-started).
-
-To learn React, check out the [React documentation](https://reactjs.org/).
+## Ì≥Å Project Structure
