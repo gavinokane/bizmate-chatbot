@@ -1,0 +1,42 @@
+name: Build and Deploy to Azure Container App
+
+on:
+  push:
+    branches:
+      - master
+      - main
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Log in to GitHub Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build Docker image
+        run: |
+          docker build -t ghcr.io/gavinokane/bizmate-chatbot:latest .
+
+      - name: Push Docker image
+        run: |
+          docker push ghcr.io/gavinokane/bizmate-chatbot:latest
+
+      - name: Azure Login
+        uses: azure/login@v1
+        with:
+          creds: ${{ secrets.AZURE_CREDENTIALS }}
+
+      - name: Deploy to Azure Container App
+        run: |
+          az containerapp update \
+            --name temp-gok-chat \
+            --resource-group rg-dev01 \
+            --image ghcr.io/gavinokane/bizmate-chatbot:latest \
+            --environment temp-gok-env
