@@ -22,8 +22,8 @@ export class ChatAPI {
   async sendMessage(request: ChatRequest): Promise<ChatResponse> {
     try {
       // Extract hub_id and agent_id from request if present, else use defaults
-      const hubId = request.hub_id || '581898583';
-      const agentId = request.agent_id || '42910897';
+      const hubId = request.hub_id || '564855680';
+      const agentId = request.agent_id || '42916004';
       const question = request.query;
 
       // Build params string as per API sample
