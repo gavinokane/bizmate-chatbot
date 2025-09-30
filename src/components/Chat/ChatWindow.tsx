@@ -2,7 +2,7 @@ import React, { useState, useCallback } from 'react';
 import { css } from '@emotion/css';
 import { MessageList } from './MessageList';
 import { MessageInput } from './MessageInput';
-import { CloseIcon, ChatIcon } from '../UI/Icons';
+import { CloseIcon, ChatIcon, InfoCircleIcon } from '../UI/Icons';
 import { Message, ChatRequest } from '../../types/chat';
 import { chatAPI } from '../../services/api/chatAPI';
 import { useLocalStorage } from '../../hooks/useLocalStorage';
@@ -86,9 +86,26 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({ isOpen, onClose }) => {
   const [messages, setMessages] = useLocalStorage<Message[]>('chat_conversation', []);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [citationsSidebarOpen, setCitationsSidebarOpen] = useState(false);
+  const [sidebarCitations, setSidebarCitations] = useState<any[]>([]);
+  const [sidebarMessage, setSidebarMessage] = useState<Message | null>(null);
+  const [isExploded, setIsExploded] = useState(false);
   
   const { sessionId, createSession, updateTimestamp } = useSessionManager();
   const { checkRateLimit, isRateLimited } = useRateLimiting();
+
+  // Auto-update citations panel on new bot response
+  React.useEffect(() => {
+    if (!citationsSidebarOpen) return;
+    // Find the latest bot message with sources
+    const latestBotMsg = [...messages].reverse().find(
+      (msg) => msg.sender === 'bot' && msg.sources && msg.sources.length > 0
+    );
+    if (latestBotMsg) {
+      setSidebarCitations(latestBotMsg.sources || []);
+      setSidebarMessage(latestBotMsg);
+    }
+  }, [messages, citationsSidebarOpen]);
 
   // Create session when chat opens
   React.useEffect(() => {
@@ -228,13 +245,59 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({ isOpen, onClose }) => {
   }, [setMessages]);
 
   return (
-    <div className={`${chatWindowStyles} ${isOpen ? 'open' : ''}`}>
+    <div
+      className={`${chatWindowStyles} ${isOpen ? 'open' : ''}`}
+      style={
+        citationsSidebarOpen
+          ? {
+              width: isExploded ? '1400px' : '700px',
+              height: isExploded ? '750px' : '500px',
+              transition: 'width 0.3s, height 0.3s'
+            }
+          : {
+              width: isExploded ? '760px' : '380px',
+              height: isExploded ? '750px' : '500px',
+              transition: 'width 0.3s, height 0.3s'
+            }
+      }
+    >
       <div className={headerStyles}>
         <div className={titleStyles}>
           <ChatIcon size={20} />
           Maddie - AI Assistant
         </div>
-        <div style={{ display: 'flex', gap: '8px' }}>
+        <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+          {(() => {
+            // Always show citations icon if REACT_APP_SHOW_CITATIONS === 'true'
+            const latestBotMsg = [...messages].reverse().find(
+              (msg) => msg.sender === 'bot' && msg.sources && msg.sources.length > 0
+            );
+            const hasCitations = !!latestBotMsg;
+            return (
+              <button
+                className={closeButtonStyles}
+                style={{ fontSize: '18px', marginRight: '2px', opacity: hasCitations ? 1 : 0.5, cursor: hasCitations ? 'pointer' : 'not-allowed' }}
+                title={hasCitations ? "Show citations for latest message" : "No citations available"}
+                onClick={() => {
+                  if (hasCitations) {
+                    setSidebarCitations(latestBotMsg.sources || []);
+                    setSidebarMessage(latestBotMsg);
+                    setCitationsSidebarOpen(true);
+                  }
+                }}
+                disabled={!hasCitations}
+              >
+                <InfoCircleIcon size={18} />
+              </button>
+            );
+          })()}
+          <button
+            className={closeButtonStyles}
+            onClick={() => setIsExploded((prev) => !prev)}
+            title={isExploded ? "Shrink chat window" : "Expand chat window"}
+          >
+            {isExploded ? "🗕" : "🗖"}
+          </button>
           <button
             className={closeButtonStyles}
             onClick={handleClearConversation}
@@ -273,6 +336,57 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({ isOpen, onClose }) => {
             : "Ask Maddie anything..."
         }
       />
+
+      {citationsSidebarOpen && (
+        <div
+          style={{
+            position: 'absolute',
+            top: 0,
+            right: 0,
+            width: '320px',
+            height: '100%',
+            background: '#fffbe6',
+            borderLeft: '2px solid #ffd700',
+            boxShadow: '-4px 0 16px rgba(0,0,0,0.10)',
+            zIndex: 2000,
+            display: 'flex',
+            flexDirection: 'column',
+            padding: '24px 16px',
+            overflowY: 'auto',
+            transition: 'right 0.3s'
+          }}
+        >
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
+            <span style={{ fontSize: '22px', fontWeight: 'bold', color: '#212529' }}>Citations</span>
+            <button
+              style={{
+                background: 'none',
+                border: 'none',
+                fontSize: '20px',
+                cursor: 'pointer',
+                color: '#212529',
+                borderRadius: '4px',
+                padding: '4px 8px'
+              }}
+              onClick={() => setCitationsSidebarOpen(false)}
+              title="Close citations"
+            >
+              <CloseIcon size={20} />
+            </button>
+          </div>
+          <div style={{ fontSize: '15px', color: '#555', marginBottom: '12px' }}>
+            {sidebarMessage && sidebarMessage.content}
+          </div>
+          <ul style={{ paddingLeft: 0, margin: 0, listStyle: 'none' }}>
+            {sidebarCitations.map((citation, idx) => (
+              <li key={idx} style={{ marginBottom: '18px' }}>
+                <div style={{ fontWeight: 500 }}>{citation.name}</div>
+                <div style={{ fontSize: '13px', color: '#555' }}>{citation.content}</div>
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
     </div>
   );
 };

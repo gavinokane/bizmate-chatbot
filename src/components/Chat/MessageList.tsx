@@ -61,7 +61,7 @@ const welcomeMessageStyles = css`
 export const MessageList: React.FC<MessageListProps> = ({ 
   messages, 
   isLoading = false, 
-  onFollowUpClick 
+  onFollowUpClick
 }) => {
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);

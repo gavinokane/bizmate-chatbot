@@ -1,7 +1,7 @@
-import React, { useState } from 'react';
+import React from 'react';
 import ReactMarkdown from 'react-markdown';
 import { css } from '@emotion/css';
-import { Message as MessageType, Citation } from '../../types/chat';
+import { Message as MessageType } from '../../types/chat';
 import { formatTimestamp } from '../../utils/helpers';
 
 interface MessageProps {
@@ -61,38 +61,8 @@ const timestampStyles = css`
   margin-top: 4px;
 `;
 
-const citationPillStyles = css`
-  display: inline-block;
-  background: #e0e7ff;
-  color: #3730a3;
-  border-radius: 12px;
-  padding: 4px 10px;
-  margin: 2px 6px 2px 0;
-  font-size: 12px;
-  cursor: pointer;
-  border: 1px solid #a5b4fc;
-  transition: background 0.2s;
-  &:hover {
-    background: #c7d2fe;
-  }
-`;
 
-const citationDetailsStyles = css`
-  background: #f3f4f6;
-  border: 1px solid #e5e7eb;
-  border-radius: 8px;
-  padding: 10px 14px;
-  margin-top: 6px;
-  font-size: 13px;
-  color: #374151;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.04);
-`;
 
-const sourcesStyles = css`
-  margin-top: 8px;
-  font-size: 12px;
-  opacity: 0.8;
-`;
 
 const followUpStyles = css`
   margin-top: 8px;
@@ -115,7 +85,6 @@ const followUpButtonStyles = css`
 
 export const Message: React.FC<MessageProps> = ({ message, onFollowUpClick }) => {
   const isUser = message.sender === 'user';
-  const [expandedCitation, setExpandedCitation] = useState<number | null>(null);
 
   const handleFollowUpClick = (question: string) => {
     if (onFollowUpClick) {
@@ -136,58 +105,6 @@ export const Message: React.FC<MessageProps> = ({ message, onFollowUpClick }) =>
           {formatTimestamp(messageDate)}
         </div>
         
-        {message.sources && message.sources.length > 0 && (
-          <div className={sourcesStyles} style={{ position: 'relative', display: 'inline-block' }}>
-            <span
-              className={citationPillStyles}
-              style={{
-                fontWeight: 'bold',
-                fontSize: '14px',
-                borderRadius: '50%',
-                width: '22px',
-                height: '22px',
-                display: 'inline-flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                padding: 0,
-                marginRight: '6px',
-                cursor: 'pointer'
-              }}
-              tabIndex={0}
-              aria-label="Show citations"
-              onMouseEnter={() => setExpandedCitation(0)}
-              onMouseLeave={() => setExpandedCitation(null)}
-              onFocus={() => setExpandedCitation(0)}
-              onBlur={() => setExpandedCitation(null)}
-            >
-              i
-            </span>
-            {expandedCitation === 0 && (
-              <div
-                className={citationDetailsStyles}
-                style={{
-                  position: 'absolute',
-                  left: '28px',
-                  top: '-10px',
-                  minWidth: '220px',
-                  zIndex: 10,
-                  boxShadow: '0 4px 16px rgba(0,0,0,0.10)'
-                }}
-                role="tooltip"
-              >
-                <strong>Citations</strong>
-                <ul style={{ paddingLeft: 0, margin: '8px 0 0 0', listStyle: 'none' }}>
-                  {message.sources.map((citation: Citation, idx: number) => (
-                    <li key={idx} style={{ marginBottom: '10px' }}>
-                      <div style={{ fontWeight: 500 }}>{citation.name}</div>
-                      <div style={{ fontSize: '12px', color: '#555' }}>{citation.content}</div>
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            )}
-          </div>
-        )}
         
         {message.followUpQuestions && message.followUpQuestions.length > 0 && (
           <div className={followUpStyles}>
