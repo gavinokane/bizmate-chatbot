@@ -39,5 +39,4 @@ jobs:
           az containerapp update \
             --name temp-gok-chat \
             --resource-group rg-dev01 \
-            --image ghcr.io/gavinokane/bizmate-chatbot:latest \
-            --environment temp-gok-env
+            --image ghcr.io/gavinokane/bizmate-chatbot:latest
