@@ -65,7 +65,7 @@ export class ChatAPI {
       if (data && data.output) {
         try {
           const output = JSON.parse(data.output);
-          answer = output.answer || answer;
+          answer = output.answer || (output.text && output.text.answer) || answer;
           // Map citations to { name, content }
           if (Array.isArray(output.citations)) {
             sources = output.citations.map((c: any) => ({
