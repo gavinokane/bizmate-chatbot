@@ -94,6 +94,26 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({ isOpen, onClose }) => {
   const { sessionId, createSession, updateTimestamp } = useSessionManager();
   const { checkRateLimit, isRateLimited } = useRateLimiting();
 
+  // Extract plain answer text from a JSON/Python-style dict string if present; otherwise return the input
+  const extractAnswerForHistory = (raw: string): string => {
+    if (!raw) return raw;
+    const trimmed = raw.trim();
+    let result = raw;
+    if ((trimmed.startsWith("{'") || trimmed.startsWith('{"')) && (trimmed.includes("'answer'") || trimmed.includes('"answer"'))) {
+      const m =
+        trimmed.match(/"answer"\s*:\s*"([^"]*)"/) ||
+        trimmed.match(/'answer'\s*:\s*'([^']*)'/) ||
+        trimmed.match(/'answer'\s*:\s*"([^"]*)"/) ||
+        trimmed.match(/"answer"\s*:\s*'([^']*)'/);
+      if (m) result = m[1];
+    }
+    // Unescape common sequences for display/history
+    if (typeof result === 'string') {
+      result = result.replace(/\\n/g, '\n').replace(/\\t/g, '\t');
+    }
+    return result;
+  };
+
   // Auto-update citations panel on new bot response
   React.useEffect(() => {
     if (!citationsSidebarOpen) return;
@@ -157,7 +177,7 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({ isOpen, onClose }) => {
       } else if (msg.sender === 'bot' && lastUserMsg) {
         conversation_history.push({
           prompt: lastUserMsg.content,
-          answer: msg.content,
+          answer: extractAnswerForHistory(msg.content),
           created_at: lastUserMsg.timestamp.toISOString()
         });
         lastUserMsg = null;
@@ -193,7 +213,7 @@ export const ChatWindow: React.FC<ChatWindowProps> = ({ isOpen, onClose }) => {
       // Add bot response
       const botMessage: Message = {
         id: response.id,
-        content: response.message,
+        content: extractAnswerForHistory(response.message),
         sender: 'bot',
         timestamp: new Date(),
         sources: response.sources,

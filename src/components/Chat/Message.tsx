@@ -97,10 +97,32 @@ export const Message: React.FC<MessageProps> = ({ message, onFollowUpClick }) =>
     ? message.timestamp 
     : new Date(message.timestamp);
 
+  // Normalize bot content if the API returned a dict-like string; leave user content unchanged
+  const normalizeBotContent = (raw: string): string => {
+    if (!raw) return raw;
+    const trimmed = raw.trim();
+    let result = raw;
+    if ((trimmed.startsWith("{'") || trimmed.startsWith('{"')) && (trimmed.includes("'answer'") || trimmed.includes('"answer"'))) {
+      const m =
+        trimmed.match(/"answer"\s*:\s*"([^"]*)"/) ||
+        trimmed.match(/'answer'\s*:\s*'([^']*)'/) ||
+        trimmed.match(/'answer'\s*:\s*"([^"]*)"/) ||
+        trimmed.match(/"answer"\s*:\s*'([^']*)'/);
+      if (m) result = m[1];
+    }
+    // Unescape for cleaner display
+    if (typeof result === 'string') {
+      result = result.replace(/\\n/g, '\n').replace(/\\t/g, '\t');
+    }
+    return result;
+  };
+
+  const displayContent = isUser ? message.content : normalizeBotContent(message.content);
+
   return (
     <div className={`${messageContainerStyles} ${isUser ? userMessageStyles : botMessageStyles}`}>
       <div className={`${messageBubbleStyles} ${isUser ? userBubbleStyles : botBubbleStyles}`}>
-        <ReactMarkdown>{message.content}</ReactMarkdown>
+        <ReactMarkdown>{displayContent}</ReactMarkdown>
         <div className={timestampStyles}>
           {formatTimestamp(messageDate)}
         </div>

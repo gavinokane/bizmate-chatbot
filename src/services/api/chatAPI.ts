@@ -57,27 +57,106 @@ export class ChatAPI {
 
       const data = await response.json();
 
-      // The response body contains a stringified JSON in 'output'
+      // Normalize Doozer 'output' which may be:
+      // - a proper JSON string, or
+      // - a Python-style dict string using single quotes.
       let answer = 'No response received';
       let sources: { name: string; content: string }[] = [];
-      let followUpQuestions: any[] = [];
+      let followUpQuestions: string[] = [];
 
-      if (data && data.output) {
+      const parseSingleQuotedDict = (s: string): any | null => {
         try {
-          const output = JSON.parse(data.output);
-          answer = output.answer || (output.text && output.text.answer) || answer;
-          // Map citations to { name, content }
-          if (Array.isArray(output.citations)) {
-            sources = output.citations.map((c: any) => ({
-              name: c.name,
-              content: c.content
-            }));
+          // Targeted replacements to convert Python-style dicts to valid JSON:
+          let normalized = s.trim();
+
+          // Replace Python booleans and None
+          normalized = normalized
+            .replace(/\bNone\b/g, 'null')
+            .replace(/\bTrue\b/g, 'true')
+            .replace(/\bFalse\b/g, 'false');
+
+          // Replace quoted keys: 'key': -> "key":
+          normalized = normalized.replace(/'([A-Za-z0-9_]+)'\s*:/g, '"$1":');
+
+          // Replace simple quoted string values: : 'value' -> : "value"
+          normalized = normalized.replace(/:\s*'([^']*)'/g, ': "$1"');
+
+          // Final pass: convert any remaining single-quoted strings to double-quoted
+          normalized = normalized.replace(/'([^']*)'/g, '"$1"');
+
+          return JSON.parse(normalized);
+        } catch {
+          return null;
+        }
+      };
+
+      if (data && typeof data.output !== 'undefined') {
+        const raw = data.output;
+
+        let outputObj: any = null;
+        if (typeof raw === 'string') {
+          // First attempt normal JSON.parse
+          try {
+            outputObj = JSON.parse(raw);
+          } catch {
+            // Attempt to parse single-quoted dict
+            outputObj = parseSingleQuotedDict(raw);
           }
-        } catch (e) {
-          answer = data.output;
+        } else if (typeof raw === 'object' && raw !== null) {
+          outputObj = raw;
+        }
+
+        if (outputObj) {
+          answer = outputObj.answer || (outputObj.text && outputObj.text.answer) || answer;
+
+          const citations = outputObj.citations || outputObj.sources;
+          if (Array.isArray(citations)) {
+            sources = citations
+              .map((c: any) => ({
+                name: c.name || c.title || c.id || 'Source',
+                content: c.content || c.text || ''
+              }))
+              .filter((x: any) => x.name || x.content);
+          }
+
+          const followUps = outputObj.followUpQuestions || outputObj.follow_up_questions;
+          if (Array.isArray(followUps)) {
+            followUpQuestions = followUps.filter((q: any) => typeof q === 'string');
+          }
+
+          // Fallback: if answer still looks like a dict string, try to extract text part via regex
+          if (typeof answer === 'string') {
+            const t = answer.trim();
+            if ((t.startsWith('{') || t.startsWith('{\'')) && (t.endsWith('}') || t.endsWith('}\n'))) {
+              const m =
+                t.match(/"answer"\s*:\s*"([^"]*)"/) ||
+                t.match(/'answer'\s*:\s*'([^']*)'/) ||
+                t.match(/'answer'\s*:\s*"([^"]*)"/) ||
+                t.match(/"answer"\s*:\s*'([^']*)'/);
+              if (m) answer = m[1];
+            }
+          }
+        } else if (typeof raw === 'string') {
+          // Best-effort extraction of the 'answer' field from a raw string (handles both key/value quote combos)
+          const patterns = [
+            /"answer"\s*:\s*"([^"]*)"/,
+            /'answer'\s*:\s*'([^']*)'/,
+            /'answer'\s*:\s*"([^"]*)"/,
+            /"answer"\s*:\s*'([^']*)'/
+          ];
+          let extracted: string | null = null;
+          for (const p of patterns) {
+            const m = raw.match(p);
+            if (m) { extracted = m[1]; break; }
+          }
+          answer = extracted ?? raw;
         }
       }
 
+      // Unescape common sequences for cleaner display
+      if (typeof answer === 'string') {
+        answer = answer.replace(/\\n/g, '\n').replace(/\\t/g, '\t');
+      }
       return {
         id: `doozer_${Date.now()}`,
         message: answer,
