@@ -34,6 +34,15 @@ jobs:
         with:
           creds: ${{ secrets.AZURE_CREDENTIALS }}
 
+      - name: Configure Azure Container App Registry
+        run: |
+          az containerapp registry set \
+            --name temp-gok-chat \
+            --resource-group rg-dev01 \
+            --server ghcr.io \
+            --username ${{ github.actor }} \
+            --password ${{ secrets.CR_PAT }}
+
       - name: Deploy to Azure Container App
         run: |
           az containerapp update \
